@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.env
+
+# PyTorch models (generated during training)
+backend/saved_models/
+backend/data/
+
+# Raw Kaggle data (too large for git — download from Kaggle)
+data/raw/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Planning docs (internal)
+.planning/
