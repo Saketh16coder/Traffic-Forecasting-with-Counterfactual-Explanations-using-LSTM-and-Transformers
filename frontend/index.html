@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Speed Predictor</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Animated background grid -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow--1"></div>
+    <div class="bg-glow bg-glow--2"></div>
+
+    <div class="shell">
+        <!-- Header -->
+        <header class="header">
+            <div class="header__brand">
+                <div class="header__icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <path d="M4 24L16 4L28 24H4Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+                        <circle cx="16" cy="18" r="3" fill="currentColor"/>
+                        <line x1="16" y1="10" x2="16" y2="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="header__title">Traffic Speed Predictor</h1>
+                    <p class="header__sub">AI-Powered Forecasting &middot; Explainable Predictions</p>
+                </div>
+            </div>
+            <div class="header__status" id="statusBar">
+                <div class="pill" id="dataPill">
+                    <span class="pill__dot" id="dataStatus"></span>
+                    <span class="pill__label">Data: <strong id="dataStatusText">Offline</strong></span>
+                </div>
+                <div class="pill" id="modelPill">
+                    <span class="pill__dot" id="modelStatus"></span>
+                    <span class="pill__label">Model: <strong id="modelStatusText">Untrained</strong></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Pipeline steps -->
+        <div class="pipeline">
+            <!-- Step 1 -->
+            <section class="card card--stagger-1" id="uploadSection">
+                <div class="card__head">
+                    <span class="step-num">01</span>
+                    <h2>Upload Traffic Data</h2>
+                </div>
+                <div class="card__body">
+                    <div class="upload-zone" id="uploadArea">
+                        <input type="file" id="fileUpload" accept=".csv" hidden>
+                        <div class="upload-zone__inner" onclick="document.getElementById('fileUpload').click()">
+                            <svg class="upload-zone__icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <p class="upload-zone__text">Drop CSV here or <span class="upload-zone__link">browse</span></p>
+                            <p class="upload-zone__hint">Supports Kaggle Metro Interstate Traffic Volume CSV &middot; auto-converts on upload</p>
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn--primary" onclick="uploadFile()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            Upload Custom
+                        </button>
+                        <button class="btn btn--ghost" onclick="generateSampleData()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                            Generate Sample
+                        </button>
+                    </div>
+                    <div id="uploadStatus" class="toast"></div>
+                </div>
+            </section>
+
+            <!-- Step 2 -->
+            <section class="card card--stagger-2" id="trainSection">
+                <div class="card__head">
+                    <span class="step-num">02</span>
+                    <h2>Train Model</h2>
+                </div>
+                <div class="card__body">
+                    <p class="card__desc">Train the LSTM + Transformer hybrid neural network on your traffic data.</p>
+                    <button class="btn btn--primary btn--wide" onclick="trainModel()" id="trainBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Train Model
+                    </button>
+                    <div id="trainStatus" class="toast"></div>
+                    <div id="trainingProgress" class="progress" style="display:none;">
+                        <div class="progress__track">
+                            <div class="progress__fill" id="progressFill"></div>
+                        </div>
+                        <span class="progress__label" id="progressText">Training...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 3 -->
+            <section class="card card--stagger-3" id="predictSection">
+                <div class="card__head">
+                    <span class="step-num">03</span>
+                    <h2>Predict Speed</h2>
+                </div>
+                <div class="card__body">
+                    <p class="card__desc">Enter current traffic conditions to forecast the next hour.</p>
+                    <div class="field-grid">
+                        <label class="field">
+                            <span class="field__label">Speed (mph)</span>
+                            <input type="number" id="speed" class="field__input" placeholder="58" min="0" max="100" step="0.5">
+                        </label>
+                        <label class="field">
+                            <span class="field__label">Volume</span>
+                            <input type="number" id="volume" class="field__input" placeholder="20" min="0" max="100" step="1">
+                        </label>
+                        <label class="field">
+                            <span class="field__label">Hour (0-23)</span>
+                            <input type="number" id="hour" class="field__input" placeholder="8" min="0" max="23">
+                        </label>
+                        <label class="field">
+                            <span class="field__label">Day (0=Mon)</span>
+                            <input type="number" id="day" class="field__input" placeholder="1" min="0" max="6">
+                        </label>
+                    </div>
+                    <button class="btn btn--accent btn--wide" onclick="predict()" id="predictBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        Predict Traffic Speed
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Results -->
+        <section class="results" id="resultsSection" style="display:none;">
+            <div class="results__hero">
+                <div class="results__ring">
+                    <span class="results__value" id="predictionValue">--</span>
+                    <span class="results__unit">mph</span>
+                </div>
+                <p class="results__label">Predicted Speed</p>
+                <span class="badge" id="conditionBadge">--</span>
+            </div>
+
+            <!-- Input Summary -->
+            <div class="results__grid results__grid--4col" id="inputSummaryGrid" style="margin-bottom:16px;">
+                <div class="panel">
+                    <h3 class="panel__title">Avg Speed</h3>
+                    <p class="panel__value" id="summarySpeed">--</p>
+                    <p class="panel__sub">mph (input)</p>
+                </div>
+                <div class="panel">
+                    <h3 class="panel__title">Avg Volume</h3>
+                    <p class="panel__value" id="summaryVolume">--</p>
+                    <p class="panel__sub">vehicles/hr</p>
+                </div>
+                <div class="panel">
+                    <h3 class="panel__title">Hour</h3>
+                    <p class="panel__value" id="summaryHour">--</p>
+                    <p class="panel__sub" id="summaryHourLabel">time of day</p>
+                </div>
+                <div class="panel">
+                    <h3 class="panel__title">Day</h3>
+                    <p class="panel__value" id="summaryDay">--</p>
+                    <p class="panel__sub" id="summaryDayLabel">day of week</p>
+                </div>
+            </div>
+
+            <div class="results__grid">
+                <!-- Feature Importance -->
+                <div class="panel">
+                    <h3 class="panel__title">Feature Importance</h3>
+                    <p class="panel__sub">Which factors influenced this prediction most?</p>
+                    <div class="panel__chart">
+                        <canvas id="featureChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Temporal Attention -->
+                <div class="panel" id="attentionChartContainer">
+                    <h3 class="panel__title">Temporal Attention</h3>
+                    <p class="panel__sub">Which past hours did the model focus on?</p>
+                    <div class="panel__chart">
+                        <canvas id="attentionChart"></canvas>
+                    </div>
+                    <p class="panel__note" id="attentionDescription"></p>
+                </div>
+
+                <!-- Explanation -->
+                <div class="panel panel--wide">
+                    <h3 class="panel__title">Explanation</h3>
+                    <p class="panel__text" id="explanationText"></p>
+                </div>
+
+                <!-- What-If -->
+                <div class="panel panel--wide">
+                    <h3 class="panel__title">What-If Scenarios</h3>
+                    <p class="panel__sub">How would changes affect the prediction?</p>
+                    <div class="scenario-grid" id="counterfactualCards"></div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>Traffic Speed Predictor &middot; Explainable AI for Traffic Forecasting</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
